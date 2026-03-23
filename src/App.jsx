@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { HomePage } from './features/dashboard/HomePage'
 import { DashboardGridPage } from './features/detail-slot/DashboardGridPage'
 import { SlotDetailPage } from './features/detail-slot/SlotDetailPage'
@@ -13,12 +13,14 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/slot/:id" element={<DashboardGridPage />} />
         <Route path="/slot/:slotId/box/:boxNumber" element={<SlotDetailPage />} />
         {/* Additional routes will be wired here as features are built */}
+        {/* GitHub Pages / direct-link fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
