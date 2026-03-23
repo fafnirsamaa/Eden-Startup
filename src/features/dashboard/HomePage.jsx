@@ -5,7 +5,7 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { GardenSlotCard } from './components/GardenSlotCard'
 import { OfferBannerCard } from './components/OfferBannerCard'
 import { NewProductCard } from './components/NewProductCard'
-import edenLNoBg from '../../assets/images/eden_l_no_bg.png'
+import edenLNoBg from '../../assets/images/eden_l_no_bg.webp'
 import edenLogo from '../../assets/images/eden_logo.svg'
 
 /* Figma assets — 7-day expiry. Replace with CDN URLs before production. */

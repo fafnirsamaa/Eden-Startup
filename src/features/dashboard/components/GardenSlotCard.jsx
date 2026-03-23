@@ -45,6 +45,8 @@ export function GardenSlotCard({ id, name = 'Eden L', status = 'En ligne', image
             <img
               src={imageUrl}
               alt={name}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
           ) : (

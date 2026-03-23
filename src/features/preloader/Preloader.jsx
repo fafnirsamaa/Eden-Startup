@@ -14,7 +14,7 @@
  */
 import { useRef, useEffect } from 'react'
 import { gsap } from '@/lib/gsap'
-import bgNoise from '@/assets/images/bg_noise.png'
+import bgNoise from '@/assets/images/bg_noise.webp'
 import edenLogo from '@/assets/images/eden_logo_baseline.svg'
 
 /* Intersection position as percentages of the preloader frame */

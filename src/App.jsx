@@ -6,7 +6,13 @@ import { SlotDetailPage } from './features/detail-slot/SlotDetailPage'
 import { Preloader } from './features/preloader/Preloader'
 
 function App() {
-  const [ready, setReady] = useState(false)
+  const basePath = import.meta.env.BASE_URL || '/'
+  const normalizedBase = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath
+  const appPath = window.location.pathname.startsWith(normalizedBase)
+    ? window.location.pathname.slice(normalizedBase.length) || '/'
+    : window.location.pathname
+  const startsOnHome = appPath === '/'
+  const [ready, setReady] = useState(!startsOnHome)
 
   if (!ready) {
     return <Preloader onComplete={() => setReady(true)} />

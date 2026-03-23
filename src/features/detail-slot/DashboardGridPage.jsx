@@ -11,12 +11,15 @@ import {
 } from 'lucide-react'
 import { gsap } from '@/lib/gsap'
 import { BottomNav } from '@/components/layout/BottomNav'
+import laitueImg from '@/assets/images/laitue.webp'
+import tomatoImg from '@/assets/images/tomato.webp'
+import basilicImg from '@/assets/images/basilic.webp'
 
 /* ── Mock data ────────────────────────────────────────────── */
 const PROFILE_IMG = 'https://www.figma.com/api/mcp/asset/fded8679-9a6b-46b9-afdf-d77a506d6dae'
 
-/* Figma plant images — 7-day expiry, replace with CDN URLs before production */
-const IMG_LAITUE  = 'https://www.figma.com/api/mcp/asset/59497f31-17b5-4515-ae23-0fb8de3f701f'
+/* Local vegetable assets (optimized webp). */
+const IMG_LAITUE  = laitueImg
 const IMG_SPROUT = 'https://www.figma.com/api/mcp/asset/f22aeb74-d2dd-4ec1-b6d5-8a46340d41c4'
 const IMG_BTN_ROUND = 'https://www.figma.com/api/mcp/asset/7d0af66f-1faa-405e-970a-82e87116c04a'
 
@@ -24,14 +27,13 @@ const IMG_BTN_ROUND = 'https://www.figma.com/api/mcp/asset/7d0af66f-1faa-405e-97
 const IMG_DROPLETS_2 = 'https://www.figma.com/api/mcp/asset/b606dbe6-9e49-4622-adfa-5c75a61a6b7e'
 const IMG_THERMOMETER_FRAME = 'https://www.figma.com/api/mcp/asset/5d3ddbfc-5bff-4b53-81b2-05722e2fff6d'
 
-// Plant cutout frames from the Figma component
-const IMG_PLANT_FRAME_31 = 'https://www.figma.com/api/mcp/asset/ad646400-dc37-4cda-912e-18b5b4b24dce'
-const IMG_PLANT_FRAME_32 = 'https://www.figma.com/api/mcp/asset/30e71d0d-a2c4-4b8d-97f1-5834b340530d'
-const IMG_PLANT_FRAME_33 = 'https://www.figma.com/api/mcp/asset/f752be5d-0e8d-4367-b41b-a3c404b19beb'
+const IMG_PLANT_FRAME_31 = laitueImg
+const IMG_PLANT_FRAME_32 = tomatoImg
+const IMG_PLANT_FRAME_33 = basilicImg
 
 const MOCK_SLOTS = {
   'slot-1': {
-    name: 'Eden Medium',
+    name: 'Eden L',
     status: 'En ligne',
     reservoir: { current: 20, total: 60 },
     plants: [
@@ -418,6 +420,8 @@ function CardList({ plant, onNavigate }) {
               <img
                 src={plantSrc}
                 alt={name}
+                loading="lazy"
+                decoding="async"
                 style={{
                   position: 'absolute',
                   maxWidth: 'none',
@@ -530,16 +534,6 @@ export function DashboardGridPage() {
             </button>
 
             <div className="flex flex-col items-start justify-start" style={{ gap: 8 }}>
-              <span
-                className="font-body text-xs font-medium rounded-full px-2 whitespace-nowrap"
-                style={{
-                  background: 'var(--color-eden-lime)',
-                  color: 'var(--color-eden-ink)',
-                  paddingTop: 4, paddingBottom: 4,
-                }}
-              >
-                {slot.status}
-              </span>
               <h1
                 className="font-heading"
                 style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-eden-light)', margin: 0, lineHeight: 1.2 }}

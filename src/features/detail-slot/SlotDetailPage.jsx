@@ -6,17 +6,18 @@
 import { useRef, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Sun, Droplets, Gauge, Thermometer,
-  BarChart3, CalendarDays, CircleHelp, ArrowLeft, FlaskConical,
+  Sun, Droplets, Gauge, Thermometer, ArrowLeft, FlaskConical,
   Bell, UserRound,
 } from 'lucide-react'
 import { gsap } from '@/lib/gsap'
-import edenLNoBg from '@/assets/images/eden_l_no_bg.png'
+import { BottomNav } from '@/components/layout/BottomNav'
+import edenLNoBg from '@/assets/images/eden_l_no_bg.webp'
+import laitueImg from '@/assets/images/laitue.webp'
+import tomatoImg from '@/assets/images/tomato.webp'
 
 /* ── Mock data — swap for real API ────────────────────────── */
-/* Figma reference values match slot-1-4 (Tomate ronde) exactly. */
-const TOMATO_IMG = 'https://www.figma.com/api/mcp/asset/9daaf590-c894-48ae-8427-a60bdd725839'
-const LETTUCE_IMG = 'https://www.figma.com/api/mcp/asset/59497f31-17b5-4515-ae23-0fb8de3f701f'
+const TOMATO_IMG = tomatoImg
+const LETTUCE_IMG = laitueImg
 
 const MOCK = {
   'slot-1': {
@@ -41,142 +42,126 @@ const MAX_SUN_HOURS = 8
 
 /* ── SVG sunlight arc ─────────────────────────────────────── */
 
-const ARC = {
-  W:  353,
-  H:  165,    // SVG viewBox height
-  CX: 176.5,  // horizontal centre = card width / 2
-  CY: 157,    // arc diameter sits at this y in the SVG
-  R:  150,    // radius — arc spans CX±150 = 26.5…326.5 (6px side padding)
-}
+// Figma node 164:394 geometry:
+// Arc group positioned at left=16.64, top=71 in card.
+// Track (Subtract): 319.726×160px → semicircle from (16.64,231) to (336.37,231), top at (176.5,71)
+// Arc centre: CX=176.5, CY=231, R=160
+const ARC_CX = 176.5
+const ARC_CY = 231
+const ARC_R  = 160
 
-/**
- * Computes SVG path data for the sunlight arc track and progress fill.
- * The arc is a top semi-circle (counter-clockwise in screen coords).
- * θ=0 → left end (dawn), θ=π → right end (dusk).
- */
-function arcPaths(hours, maxHours) {
-  const { CX, CY, R } = ARC
-  const sx = CX - R               // left end of diameter
-  const ex = CX + R               // right end
-
-  const p = Math.min(1, hours / maxHours)
-  const theta = Math.PI * p
-  const px = CX - R * Math.cos(theta)
-  const py = CY - R * Math.sin(theta)
-  const la = p > 0.5 ? 1 : 0     // large-arc-flag
-
+function sunlightArc(hours, maxHours) {
+  const progress = Math.max(0, Math.min(1, hours / maxHours))
+  // θ=π at progress=0 (left), θ=0 at progress=1 (right)
+  const theta = Math.PI * (1 - progress)
+  const tipX  = ARC_CX + ARC_R * Math.cos(theta)
+  const tipY  = ARC_CY - ARC_R * Math.sin(theta)
   return {
-    track:   `M ${sx},${CY} A ${R},${R} 0 0 0 ${ex},${CY}`,
-    fill:    p > 0 ? `M ${sx},${CY} A ${R},${R} 0 ${la},0 ${px},${py}` : '',
-    startX:  sx,           // sun icon anchor x (in SVG coords)
-    startY:  CY,           // sun icon anchor y
-    tipX:    px,           // progress tip x (for "2H" pill)
-    tipY:    py,           // progress tip y
+    track: `M ${ARC_CX - ARC_R},${ARC_CY} A ${ARC_R},${ARC_R} 0 0 0 ${ARC_CX + ARC_R},${ARC_CY}`,
+    fill: progress > 0
+      ? `M ${ARC_CX - ARC_R},${ARC_CY} A ${ARC_R},${ARC_R} 0 ${progress > 0.5 ? 1 : 0} 0 ${tipX},${tipY}`
+      : '',
+    tipX,
+    tipY,
   }
 }
 
 /* ── Page sub-components ──────────────────────────────────── */
 
 /**
- * Full-width hero card with a lime sunlight arc, plant image, and duration pill.
+ * Sunlight card — Figma 164:394.
+ * Arc: semicircle CX=176.5 CY=231 R=160, top dome at y=71. Card h=295.
+ * Plant in 146×146 frosted box at top=123, image 295×197 centred and overflowing.
  */
 function SunlightCard({ sunHours = 2, imageUrl }) {
-  const { track, fill, startX, startY, tipX, tipY } = arcPaths(sunHours, MAX_SUN_HOURS)
-  const SVG_TOP = 50   // distance from card top to SVG top
-  const IMG_H   = 170
-  const CARD_H  = 295
+  const CARD_H = 295
+  const CARD_W = 353
+  const { track, fill, tipX, tipY } = sunlightArc(sunHours, MAX_SUN_HOURS)
 
-  /* Absolute card positions of key elements */
-  const sunTop  = SVG_TOP + startY - 24        // sun icon centre
-  const sunLeft = startX - 20
-  const pillTop = SVG_TOP + tipY - 15
-  const pillLeft = Math.min(ARC.W - 64, Math.max(4, tipX - 24))
+  // Sun icon 52×52 centred on arc tip
+  const sunL = tipX - 26
+  const sunT = tipY - 26
 
   return (
     <div
       style={{
         position: 'relative',
+        width: CARD_W,
         height: CARD_H,
-        background: 'var(--color-eden-elevated)',
+        background: '#364F47',
         borderRadius: 32,
         overflow: 'hidden',
         flexShrink: 0,
       }}
     >
-      {/* ── Arc SVG ── */}
+      {/* Arc SVG — track + progress fill */}
       <svg
-        width={ARC.W}
-        height={ARC.H}
-        style={{ position: 'absolute', top: SVG_TOP, left: 0 }}
+        width={CARD_W}
+        height={CARD_H}
+        style={{ position: 'absolute', inset: 0 }}
+        aria-hidden="true"
       >
-        <path d={track} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={5} strokeLinecap="round" />
+        <path
+          d={track}
+          fill="none"
+          stroke="rgba(252,255,242,0.13)"
+          strokeWidth={12}
+          strokeLinecap="round"
+        />
         {fill && (
-          <path d={fill} fill="none" stroke="var(--color-eden-lime)" strokeWidth={5} strokeLinecap="round" />
+          <path
+            d={fill}
+            fill="none"
+            stroke="var(--color-eden-lime)"
+            strokeWidth={12}
+            strokeLinecap="round"
+          />
         )}
       </svg>
 
-      {/* ── Sun icon at arc start ── */}
+      {/* Sun icon at arc tip */}
       <div
-        style={{
-          position: 'absolute',
-          top: sunTop,
-          left: sunLeft,
-          zIndex: 3,
-        }}
+        style={{ position: 'absolute', top: sunT, left: sunL, zIndex: 4 }}
         aria-hidden="true"
       >
-        <Sun size={42} color="var(--color-eden-lime)" strokeWidth={1.5} />
+        <Sun size={52} color="var(--color-eden-lime)" strokeWidth={1.5} />
       </div>
 
-      {/* ── Duration pill at arc tip ── */}
+      {/* Frosted 146×146 box at top=123, image 295×197 overflowing centre */}
       <div
         style={{
           position: 'absolute',
-          top: pillTop,
-          left: pillLeft,
-          zIndex: 4,
-          background: 'rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(6px)',
-          WebkitBackdropFilter: 'blur(6px)',
-          borderRadius: 9999,
-          padding: '4px 10px',
-          display: 'flex',
-          alignItems: 'center',
-        }}
-      >
-        <span
-          className="font-body"
-          style={{ fontSize: 16, color: 'var(--color-eden-light)', lineHeight: 1 }}
-        >
-          {sunHours}H
-        </span>
-      </div>
-
-      {/* ── Plant image (in front of arc) ── */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
+          top: 123,
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 200,
-          height: IMG_H,
-          zIndex: 2,
+          width: 146,
+          height: 146,
+          borderRadius: 20,
+          background: 'rgba(255,255,255,0.10)',
+          overflow: 'visible',
+          zIndex: 3,
         }}
       >
         <img
           src={imageUrl ?? edenLNoBg}
           alt=""
+          loading="eager"
+          decoding="sync"
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            objectPosition: 'bottom center',
+            position: 'absolute',
+            width: 295,
+            height: 197,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            objectFit: 'cover',
+            objectPosition: 'center bottom',
+            pointerEvents: 'none',
           }}
         />
       </div>
 
-      {/* ── Title + icon (topmost layer) ── */}
+      {/* Header row */}
       <div
         style={{
           position: 'absolute',
@@ -190,14 +175,9 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
       >
         <p
           className="font-heading"
-          style={{
-            fontSize: 22,
-            fontWeight: 600,
-            color: 'var(--color-eden-light)',
-            margin: 0,
-          }}
+          style={{ fontSize: 22, fontWeight: 600, color: 'var(--color-eden-light)', margin: 0 }}
         >
-          Durée d'ensoleillement
+          Durée d&apos;ensoleillement
         </p>
         <button
           aria-label="Paramètres"
@@ -215,6 +195,7 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
     </div>
   )
 }
+
 
 /**
  * Half-width sensor metric card with a vertical level bar.
@@ -316,57 +297,6 @@ function SensorCard({ value, maxValue = 100, display, label, barColor, Icon }) {
           </span>
         </div>
       </div>
-    </div>
-  )
-}
-
-/** 4-button frosted pill nav bar specific to this page. */
-function DetailNav() {
-  const navigate = useNavigate()
-
-  const buttons = [
-    { Icon: ArrowLeft,   label: 'Retour',        onClick: () => navigate(-1) },
-    { Icon: BarChart3,   label: 'Statistiques',  onClick: () => {} },
-    { Icon: CalendarDays, label: 'Calendrier',   onClick: () => {} },
-    { Icon: CircleHelp,  label: 'Aide',          onClick: () => {} },
-  ]
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center pb-2">
-      <nav
-        className="flex items-center"
-        style={{
-          gap: 8,
-          padding: 12,
-          borderRadius: 101,
-          background: 'rgba(28,28,28,0.20)',
-          backdropFilter: 'blur(6px)',
-          WebkitBackdropFilter: 'blur(6px)',
-        }}
-        aria-label="Navigation détail"
-      >
-        {buttons.map(({ Icon, label, onClick }) => (
-          <button
-            key={label}
-            onClick={onClick}
-            aria-label={label}
-            style={{
-              width: 52, height: 52,
-              borderRadius: 9999,
-              background: 'rgba(252,255,242,0.10)',
-              border: 'none', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <Icon size={22} color="var(--color-eden-light)" strokeWidth={1.5} />
-          </button>
-        ))}
-      </nav>
-      <div
-        className="mt-2 rounded-full bg-white/40"
-        style={{ width: 139, height: 5 }}
-        aria-hidden="true"
-      />
     </div>
   )
 }
@@ -548,7 +478,7 @@ export function SlotDetailPage() {
 
       </div>
 
-      <DetailNav />
+      <BottomNav />
     </div>
   )
 }

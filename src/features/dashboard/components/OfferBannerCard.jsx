@@ -1,4 +1,4 @@
-import bgNoise from '../../../assets/images/bg_noise.png'
+import bgNoise from '../../../assets/images/bg_noise.webp'
 
 /**
  * Promotional offer banner card (169:4720 in Figma).
