@@ -9,7 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   // GitHub Pages serves this project from: /<repo-name>/
   // (repo name: Eden-Startup)
-  base: '/Eden-Startup/',
+  base: process.env.VITE_BASE_URL || '/',
   plugins: [
     react(),
     tailwindcss(),
