@@ -50,7 +50,7 @@ export function BottomNav() {
         if (boxRouteMatch) navigate(`/slot/${boxRouteMatch[1]}`)
       },
     },
-    { Icon: CalendarDays, label: 'Calendrier', onClick: () => {} },
+    { Icon: CalendarDays, label: 'Calendrier', onClick: () => navigate('/calendar') },
     { Icon: CircleHelp, label: 'Aide', onClick: () => {} },
   ]
 
