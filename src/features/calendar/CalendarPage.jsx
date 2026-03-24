@@ -514,14 +514,22 @@ function ListView({ upcomingHarvests }) {
 function ViewToggle({ value, onChange }) {
   return (
     <div
-      style={{
-        display: 'flex',
-        background: 'var(--color-eden-elevated)',
-        borderRadius: 12,
-        padding: 4,
-        gap: 2,
-      }}
+      className="flex items-center rounded-full relative"
+      style={{ background: 'var(--color-eden-elevated)', padding: 4 }}
     >
+      {/* Sliding lime pill */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 4,
+          width: 36, height: 36,
+          borderRadius: 9999,
+          background: 'var(--color-eden-lime)',
+          transform: `translateX(${value === 'calendar' ? 36 : 0}px)`,
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: 'none',
+        }}
+      />
       {[
         { id: 'list',     Icon: List,        label: 'Vue liste' },
         { id: 'calendar', Icon: CalendarDays, label: 'Vue calendrier' },
@@ -532,17 +540,17 @@ function ViewToggle({ value, onChange }) {
           aria-label={label}
           aria-pressed={value === id}
           style={{
-            width: 36, height: 36, borderRadius: 8,
-            border: 'none', cursor: 'pointer',
-            background: value === id ? 'rgba(252,255,242,0.12)' : 'transparent',
+            width: 36, height: 36, flexShrink: 0,
+            borderRadius: 9999, border: 'none', cursor: 'pointer',
+            background: 'transparent',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'background 0.18s ease',
+            position: 'relative', zIndex: 1,
           }}
         >
           <Icon
             size={18}
             strokeWidth={1.5}
-            color={value === id ? 'var(--color-eden-light)' : 'rgba(252,255,242,0.35)'}
+            color={value === id ? 'var(--color-eden-ink)' : 'var(--color-eden-light)'}
           />
         </button>
       ))}
