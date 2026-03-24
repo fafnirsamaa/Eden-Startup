@@ -3,17 +3,19 @@
  * Figma: Dashboard/Detail-Slot (node 136:5001)
  * Route: /slot/:slotId/box/:boxNumber
  */
-import { useRef, useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useRef, useEffect, useCallback } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
   Sun, Droplets, Gauge, Thermometer, ArrowLeft, FlaskConical,
-  Bell, UserRound,
+  Bell,
 } from 'lucide-react'
 import { gsap } from '@/lib/gsap'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { Avatar } from '@/components/Avatar'
 import edenLNoBg from '@/assets/images/eden_l_no_bg.webp'
 import laitueImg from '@/assets/images/laitue.webp'
 import tomatoImg from '@/assets/images/tomato.webp'
+import boxLettuceImg from '@/assets/images/box_lettuce.png'
 
 /* ── Mock data — swap for real API ────────────────────────── */
 const TOMATO_IMG = tomatoImg
@@ -42,12 +44,11 @@ const MAX_SUN_HOURS = 8
 
 /* ── Canvas sunlight arc ──────────────────────────────────── */
 
-// Figma node 164:394 geometry:
-// Arc group at left=16.64, top=71; track width=319.726, height=160.
-// Semicircle: CX=176.5, CY=231, R=160 — dome top at y=71.
+// Figma node 164:394 geometry (R tuned slightly smaller than export; dome top fixed at y=71).
+// Semicircle: CX=176.5, CY=71+R, R — dome top at y=71.
 const ARC_CX = 176.5
-const ARC_CY = 231
-const ARC_R  = 160
+const ARC_R  = 147
+const ARC_CY = 71 + ARC_R
 const ARC_LEFT_X  = ARC_CX - ARC_R
 const ARC_RIGHT_X = ARC_CX + ARC_R
 
@@ -72,6 +73,9 @@ const FROSTED_SIZE = 146
 /** Lettuce visual ~20% larger than frosted plate (Figma). */
 const LETTUCE_PLATE_SCALE = 1.2
 const LETTUCE_WRAPPER = Math.round(FROSTED_SIZE * LETTUCE_PLATE_SCALE)
+/** Precomposed frosted plate + lettuce (export dimensions). */
+const BOX_LETTUCE_W = 295
+const BOX_LETTUCE_H = 197
 
 function setupCanvas2d(canvas, cardW, cardH) {
   if (!canvas) return null
@@ -124,8 +128,8 @@ function useSunlightArcLayers(trackRef, progressRef, sunHours, cardW, cardH) {
 
 /**
  * Sunlight card — Figma 164:394.
- * Z-order: grey track → frosted plate (empty) → lime progress → sun marker → plant (on top of arc).
- * Two canvases so the plant can sit above the progress stroke while the frost sits below it.
+ * Z-order: grey track → frosted plate (non-lettuce) or box+lettuce asset → lime progress → sun → plant.
+ * Two canvases so imagery can sit above the progress stroke where needed.
  */
 function SunlightCard({ sunHours = 2, imageUrl }) {
   const CARD_H = 295
@@ -142,19 +146,20 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
 
   const frostedTop = 123
   const lettuceTop = frostedTop + (FROSTED_SIZE - LETTUCE_WRAPPER) / 2
+  const boxLettuceTop = Math.round(frostedTop + FROSTED_SIZE / 2 - BOX_LETTUCE_H / 2)
 
   // Sun icon 52×52 centred on arc tip — same layer as progress, under the plant
   const sunL = tipX - 26
   const sunT = tipY - 26
 
   // Scale labels (0–100 %) sit just under the arc diameter so they don’t clash with the sun at the tips
-  const arcLabelTop = ARC_CY + 34
+  const arcLabelTop = ARC_CY + 16
   const labelStyle = {
     position: 'absolute',
     top: arcLabelTop,
     zIndex: 3,
     fontFamily: 'var(--font-body)',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 600,
     color: 'rgba(252,255,242,0.38)',
     lineHeight: 1,
@@ -181,21 +186,23 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
         style={{ position: 'absolute', inset: 0, display: 'block', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* 2 — Frosted plate (no image: avoids clipping; plant is layered above progress) */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          top: frostedTop,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: FROSTED_SIZE,
-          height: FROSTED_SIZE,
-          borderRadius: 20,
-          background: 'rgba(255,255,255,0.10)',
-          zIndex: 2,
-        }}
-      />
+      {/* 2 — Frosted plate (tomato / default plant only; lettuce uses box_lettuce.png below) */}
+      {!isLettuceImage && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: frostedTop,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: FROSTED_SIZE,
+            height: FROSTED_SIZE,
+            borderRadius: 20,
+            background: 'rgba(255,255,255,0.10)',
+            zIndex: 2,
+          }}
+        />
+      )}
 
       {/* 3 — Progress arc only */}
       <canvas
@@ -231,33 +238,62 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
         100
       </span>
 
-      {/* 4 — Plant: ~20% larger footprint than frost; not clipped by frost */}
-      <div
-        style={{
-          position: 'absolute',
-          top: lettuceTop,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: isLettuceImage ? LETTUCE_WRAPPER : FROSTED_SIZE,
-          height: isLettuceImage ? LETTUCE_WRAPPER : FROSTED_SIZE,
-          zIndex: 4,
-          pointerEvents: 'none',
-        }}
-      >
-        <img
-          src={currentImage}
-          alt=""
-          loading="eager"
-          decoding="sync"
+      {/* 4 — Plant (lettuce: single precomposed asset; others: image on frost) */}
+      {isLettuceImage ? (
+        <div
+          aria-hidden="true"
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: isLettuceImage ? 'contain' : 'cover',
-            objectPosition: 'center bottom',
-            display: 'block',
+            position: 'absolute',
+            top: boxLettuceTop,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: BOX_LETTUCE_W,
+            height: BOX_LETTUCE_H,
+            zIndex: 4,
+            pointerEvents: 'none',
           }}
-        />
-      </div>
+        >
+          <img
+            src={boxLettuceImg}
+            alt=""
+            loading="eager"
+            decoding="sync"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+        </div>
+      ) : (
+        <div
+          style={{
+            position: 'absolute',
+            top: lettuceTop,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: FROSTED_SIZE,
+            height: FROSTED_SIZE,
+            zIndex: 4,
+            pointerEvents: 'none',
+          }}
+        >
+          <img
+            src={currentImage}
+            alt=""
+            loading="eager"
+            decoding="sync"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center bottom',
+              display: 'block',
+            }}
+          />
+        </div>
+      )}
 
       {/* Header row */}
       <div
@@ -303,9 +339,10 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
  * @param {string}  display   - formatted string shown as the big value ("64%", "7,6", "15°")
  * @param {string}  label     - small label below the value ("Humidité", "pH", …)
  * @param {string}  barColor  - CSS colour for the filled bar
- * @param {object}  Icon      - Lucide icon component for the top-right button
+ * @param {object}  icon      - Lucide icon component for the top-right button
  */
-function SensorCard({ value, maxValue = 100, display, label, barColor, Icon }) {
+function SensorCard({ value, maxValue = 100, display, label, barColor, icon }) {
+  const MetricIcon = icon
   const BAR_H = 123                                     // height of the bar track
   const fillH = Math.round(Math.min(1, value / maxValue) * BAR_H)
   const fillTop = BAR_H - fillH                         // bar fills from bottom
@@ -317,6 +354,7 @@ function SensorCard({ value, maxValue = 100, display, label, barColor, Icon }) {
         position: 'relative',
         height: 171,
         background: 'var(--color-eden-elevated)',
+        border: '1px solid rgba(0, 0, 0, 0.1)',
         borderRadius: 32,
         padding: '24px 16px 24px 24px',
         display: 'flex',
@@ -336,7 +374,7 @@ function SensorCard({ value, maxValue = 100, display, label, barColor, Icon }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
       >
-        <Icon size={20} color="var(--color-eden-light)" strokeWidth={1.5} />
+        <MetricIcon size={20} color="var(--color-eden-light)" strokeWidth={1.5} />
       </div>
 
       {/* Level bar + value row */}
@@ -399,30 +437,6 @@ function SensorCard({ value, maxValue = 100, display, label, barColor, Icon }) {
   )
 }
 
-/* ── Page shared atoms ────────────────────────────────────── */
-
-const PROFILE_IMG = 'https://www.figma.com/api/mcp/asset/fded8679-9a6b-46b9-afdf-d77a506d6dae'
-
-function Avatar({ src }) {
-  const [broken, setBroken] = useState(false)
-  return broken ? (
-    <div
-      className="flex items-center justify-center rounded-full overflow-hidden"
-      style={{ width: 42, height: 42, background: 'var(--color-eden-elevated)' }}
-    >
-      <UserRound size={22} color="var(--color-eden-light)" strokeWidth={1.5} />
-    </div>
-  ) : (
-    <img
-      src={src}
-      alt="Profil"
-      onError={() => setBroken(true)}
-      className="rounded-full object-cover"
-      style={{ width: 42, height: 42 }}
-    />
-  )
-}
-
 /* ── Page ─────────────────────────────────────────────────── */
 
 export function SlotDetailPage() {
@@ -473,8 +487,11 @@ export function SlotDetailPage() {
 
           {/* Action buttons */}
           <div className="flex items-center" style={{ gap: 8 }}>
-            <Avatar src={PROFILE_IMG} />
-            <button
+            <Link to="/profile" aria-label="Mon profil" className="rounded-full overflow-hidden shrink-0">
+              <Avatar />
+            </Link>
+            <Link
+              to="/notifications"
               aria-label="Notifications"
               className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
               style={{
@@ -484,7 +501,7 @@ export function SlotDetailPage() {
               }}
             >
               <Bell size={20} color="#1D261B" strokeWidth={1.5} />
-            </button>
+            </Link>
           </div>
         </header>
 
@@ -541,7 +558,7 @@ export function SlotDetailPage() {
               display={`${boxData.humidity}%`}
               label="Humidité"
               barColor="#FFDF0E"
-              Icon={Droplets}
+              icon={Droplets}
             />
             <SensorCard
               value={boxData.ph}
@@ -549,7 +566,7 @@ export function SlotDetailPage() {
               display={String(boxData.ph).replace('.', ',')}
               label="pH"
               barColor="var(--color-eden-lime)"
-              Icon={Gauge}
+              icon={Gauge}
             />
           </div>
 
@@ -561,7 +578,7 @@ export function SlotDetailPage() {
               display={`${boxData.temp}°`}
               label="Celsius"
               barColor="var(--color-eden-lime)"
-              Icon={Thermometer}
+              icon={Thermometer}
             />
             <SensorCard
               value={boxData.minerals}
@@ -569,7 +586,7 @@ export function SlotDetailPage() {
               display={`${boxData.minerals}%`}
               label="Niveau d'engrais"
               barColor="var(--color-eden-orange)"
-              Icon={FlaskConical}
+              icon={FlaskConical}
             />
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Bell,
-  UserRound,
   CalendarDays,
   List,
   ChevronLeft,
@@ -9,12 +9,11 @@ import {
 } from 'lucide-react'
 import { gsap } from '@/lib/gsap'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { Avatar } from '@/components/Avatar'
 import laitueImg from '@/assets/images/laitue.webp'
 import tomatoImg from '@/assets/images/tomato.webp'
 import basilicImg from '@/assets/images/basilic.webp'
 import edenLogo from '@/assets/images/eden_logo.svg'
-
-const PROFILE_IMG = 'https://www.figma.com/api/mcp/asset/fded8679-9a6b-46b9-afdf-d77a506d6dae'
 
 /* Pinned "today" for the mock data. Swap for new Date() in production. */
 const TODAY = new Date(2026, 2, 23)
@@ -96,26 +95,6 @@ function addDays(base, n) {
 const TODAY_KEY = dateKey(TODAY)
 
 /* ── Shared sub-components ─────────────────────────────────── */
-
-function Avatar({ src }) {
-  const [broken, setBroken] = useState(false)
-  return broken ? (
-    <div
-      className="flex items-center justify-center rounded-full overflow-hidden"
-      style={{ width: 42, height: 42, background: 'var(--color-eden-elevated)' }}
-    >
-      <UserRound size={22} color="var(--color-eden-light)" strokeWidth={1.5} />
-    </div>
-  ) : (
-    <img
-      src={src}
-      alt="Profil"
-      onError={() => setBroken(true)}
-      className="rounded-full object-cover"
-      style={{ width: 42, height: 42 }}
-    />
-  )
-}
 
 function StepsTimeline({ steps }) {
   return (
@@ -531,29 +510,32 @@ function ViewToggle({ value, onChange }) {
         }}
       />
       {[
-        { id: 'list',     Icon: List,        label: 'Vue liste' },
-        { id: 'calendar', Icon: CalendarDays, label: 'Vue calendrier' },
-      ].map(({ id, Icon, label }) => (
-        <button
-          key={id}
-          onClick={() => onChange(id)}
-          aria-label={label}
-          aria-pressed={value === id}
-          style={{
-            width: 36, height: 36, flexShrink: 0,
-            borderRadius: 9999, border: 'none', cursor: 'pointer',
-            background: 'transparent',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative', zIndex: 1,
-          }}
-        >
-          <Icon
-            size={18}
-            strokeWidth={1.5}
-            color={value === id ? 'var(--color-eden-ink)' : 'var(--color-eden-light)'}
-          />
-        </button>
-      ))}
+        { id: 'list',     icon: List,        label: 'Vue liste' },
+        { id: 'calendar', icon: CalendarDays, label: 'Vue calendrier' },
+      ].map(({ id, icon, label }) => {
+        const ToggleIcon = icon
+        return (
+          <button
+            key={id}
+            onClick={() => onChange(id)}
+            aria-label={label}
+            aria-pressed={value === id}
+            style={{
+              width: 36, height: 36, flexShrink: 0,
+              borderRadius: 9999, border: 'none', cursor: 'pointer',
+              background: 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', zIndex: 1,
+            }}
+          >
+            <ToggleIcon
+              size={18}
+              strokeWidth={1.5}
+              color={value === id ? 'var(--color-eden-ink)' : 'var(--color-eden-light)'}
+            />
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -595,14 +577,17 @@ export function CalendarPage() {
             <img src={edenLogo} alt="Eden" className="block h-full w-full object-contain" style={{ objectPosition: 'left center' }} />
           </div>
           <div className="flex items-center" style={{ gap: 8 }}>
-            <Avatar src={PROFILE_IMG} />
-            <button
+            <Link to="/profile" aria-label="Mon profil" className="rounded-full overflow-hidden shrink-0">
+              <Avatar />
+            </Link>
+            <Link
+              to="/notifications"
               aria-label="Notifications"
               className="flex items-center justify-center rounded-full"
               style={{ width: 42, height: 42, background: 'var(--color-eden-lime)', border: 'none', cursor: 'pointer' }}
             >
               <Bell size={20} color="#1D261B" strokeWidth={1.5} />
-            </button>
+            </Link>
           </div>
         </header>
 

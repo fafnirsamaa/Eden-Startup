@@ -42,16 +42,16 @@ export function BottomNav() {
   )
 
   const detailButtons = [
-    { Icon: ArrowLeft, label: 'Retour', onClick: () => navigate(-1) },
+    { icon: ArrowLeft, label: 'Retour', onClick: () => navigate(-1) },
     {
-      Icon: BarChart3,
+      icon: BarChart3,
       label: 'Synthèse',
       onClick: () => {
         if (boxRouteMatch) navigate(`/slot/${boxRouteMatch[1]}`)
       },
     },
-    { Icon: CalendarDays, label: 'Calendrier', onClick: () => navigate('/calendar') },
-    { Icon: CircleHelp, label: 'Aide', onClick: () => {} },
+    { icon: CalendarDays, label: 'Calendrier', onClick: () => navigate('/calendar') },
+    { icon: CircleHelp, label: 'Aide', onClick: () => {} },
   ]
 
   return (
@@ -78,25 +78,36 @@ export function BottomNav() {
           {TABS.map((tab) => {
             const TabIcon = tab.icon
             return (
-              <NavLink key={tab.to} to={tab.to} end aria-label={tab.label}>
-                {({ isActive }) => (
-                  <div
-                    className="flex items-center justify-center rounded-full transition-colors duration-200"
-                    style={{
-                      width: 52,
-                      height: 52,
-                      background: isActive
-                        ? 'var(--color-eden-lime)'
-                        : 'rgba(252, 255, 242, 0.10)',
-                    }}
-                  >
-                    <TabIcon
-                      size={24}
-                      strokeWidth={1.5}
-                      color={isActive ? '#1D261B' : '#FCFFF2'}
-                    />
-                  </div>
-                )}
+              <NavLink
+                key={tab.to}
+                to={tab.to}
+                end={tab.to === '/'}
+                aria-label={tab.label}
+              >
+                {({ isActive }) => {
+                  const settingsCluster =
+                    tab.to === '/settings' &&
+                    (pathname === '/profile' || pathname === '/notifications')
+                  const highlight = isActive || settingsCluster
+                  return (
+                    <div
+                      className="flex items-center justify-center rounded-full transition-colors duration-200"
+                      style={{
+                        width: 52,
+                        height: 52,
+                        background: highlight
+                          ? 'var(--color-eden-lime)'
+                          : 'rgba(252, 255, 242, 0.10)',
+                      }}
+                    >
+                      <TabIcon
+                        size={24}
+                        strokeWidth={1.5}
+                        color={highlight ? '#1D261B' : '#FCFFF2'}
+                      />
+                    </div>
+                  )
+                }}
               </NavLink>
             )
           })}
@@ -115,32 +126,35 @@ export function BottomNav() {
           aria-label="Navigation détail"
           aria-hidden={!isDetailRoute}
         >
-          {detailButtons.map(({ Icon, label, onClick }) => (
-            <button
-              key={label}
-              onClick={onClick}
-              aria-label={label}
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 9999,
-                background: label === 'Retour'
-                  ? 'var(--color-eden-light)'
-                  : 'rgba(252,255,242,0.10)',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Icon
-                size={22}
-                color={label === 'Retour' ? 'var(--color-eden-ink)' : 'var(--color-eden-light)'}
-                strokeWidth={1.5}
-              />
-            </button>
-          ))}
+          {detailButtons.map(({ icon, label, onClick }) => {
+            const DetailIcon = icon
+            return (
+              <button
+                key={label}
+                onClick={onClick}
+                aria-label={label}
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 9999,
+                  background: label === 'Retour'
+                    ? 'var(--color-eden-light)'
+                    : 'rgba(252,255,242,0.10)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <DetailIcon
+                  size={22}
+                  color={label === 'Retour' ? 'var(--color-eden-ink)' : 'var(--color-eden-light)'}
+                  strokeWidth={1.5}
+                />
+              </button>
+            )
+          })}
         </nav>
       </div>
 

@@ -7,7 +7,11 @@ export function GardenSlotCard({ id, name = 'Eden L', status = 'En ligne', image
   return (
     <div
       className="pressable-card relative overflow-hidden rounded-lg flex flex-col gap-2 p-2 cursor-pointer"
-      style={{ background: 'var(--color-eden-elevated)', height: 230 }}
+      style={{
+        background: 'var(--color-eden-elevated)',
+        height: 230,
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+      }}
       onClick={() => id && navigate(`/slot/${id}`)}
       role={id ? 'button' : undefined}
       tabIndex={id ? 0 : undefined}

@@ -1,13 +1,13 @@
 import { useRef, useEffect, useState } from 'react'
-import { UserRound, Search, Plus, ShoppingCart, Leaf, Droplets, Sprout, Wrench } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Search, Plus, ShoppingCart, Leaf, Droplets, Sprout, Wrench } from 'lucide-react'
 import { gsap } from '@/lib/gsap'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { Avatar } from '@/components/Avatar'
 import laitueImg from '@/assets/images/laitue.webp'
 import tomatoImg from '@/assets/images/tomato.webp'
 import basilicImg from '@/assets/images/basilic.webp'
 import edenLogo from '@/assets/images/eden_logo.svg'
-
-const PROFILE_IMG = 'https://www.figma.com/api/mcp/asset/fded8679-9a6b-46b9-afdf-d77a506d6dae'
 
 /* ── Static data ───────────────────────────────────────────── */
 const CATEGORIES = [
@@ -127,26 +127,6 @@ const MOCK_PRODUCTS = [
 ]
 
 /* ── Sub-components ────────────────────────────────────────── */
-
-function Avatar({ src }) {
-  const [broken, setBroken] = useState(false)
-  return broken ? (
-    <div
-      className="flex items-center justify-center rounded-full overflow-hidden"
-      style={{ width: 42, height: 42, background: 'var(--color-eden-elevated)' }}
-    >
-      <UserRound size={22} color="var(--color-eden-light)" strokeWidth={1.5} />
-    </div>
-  ) : (
-    <img
-      src={src}
-      alt="Profil"
-      onError={() => setBroken(true)}
-      className="rounded-full object-cover"
-      style={{ width: 42, height: 42 }}
-    />
-  )
-}
 
 function ProductCard({ product, onAdd }) {
   const [added, setAdded] = useState(false)
@@ -364,7 +344,9 @@ export function MarketplacePage() {
             />
           </div>
           <div className="flex items-center" style={{ gap: 8 }}>
-            <Avatar src={PROFILE_IMG} />
+            <Link to="/profile" aria-label="Mon profil" className="rounded-full overflow-hidden shrink-0">
+              <Avatar />
+            </Link>
             <button
               aria-label={`Panier — ${cartCount} article${cartCount !== 1 ? 's' : ''}`}
               className="flex items-center justify-center rounded-full relative"

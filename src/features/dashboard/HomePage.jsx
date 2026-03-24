@@ -1,45 +1,20 @@
-import { useRef, useEffect, useState } from 'react'
-import { Bell, UserRound } from 'lucide-react'
+import { useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { Bell } from 'lucide-react'
 import { gsap } from '@/lib/gsap'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { Avatar } from '@/components/Avatar'
 import { GardenSlotCard } from './components/GardenSlotCard'
 import { OfferBannerCard } from './components/OfferBannerCard'
 import { NewProductCard } from './components/NewProductCard'
 import edenLNoBg from '../../assets/images/eden_l_no_bg.webp'
 import edenLogo from '../../assets/images/eden_logo.svg'
 
-/* Figma assets — 7-day expiry. Replace with CDN URLs before production. */
-const PROFILE_IMG = 'https://www.figma.com/api/mcp/asset/fded8679-9a6b-46b9-afdf-d77a506d6dae'
-
 /** Mock slots — swap for real data from gardenStore / useSensorData */
 const MOCK_SLOTS = [
   { id: 'slot-1', name: 'Eden L', status: 'En ligne', imageUrl: edenLNoBg },
   { id: 'slot-2', name: 'Eden L', status: 'En ligne', imageUrl: edenLNoBg },
 ]
-
-function Avatar({ src }) {
-  const [broken, setBroken] = useState(false)
-  return broken ? (
-    <div
-      className="flex items-center justify-center rounded-full overflow-hidden"
-      style={{
-        width: 42,
-        height: 42,
-        background: 'var(--color-eden-elevated)',
-      }}
-    >
-      <UserRound size={22} color="var(--color-eden-light)" strokeWidth={1.5} />
-    </div>
-  ) : (
-    <img
-      src={src}
-      alt="Profil"
-      onError={() => setBroken(true)}
-      className="rounded-full object-cover"
-      style={{ width: 42, height: 42 }}
-    />
-  )
-}
 
 export function HomePage() {
   const pageRef = useRef(null)
@@ -88,9 +63,12 @@ export function HomePage() {
 
           {/* Action buttons */}
           <div className="flex items-center" style={{ gap: 8 }}>
-            <Avatar src={PROFILE_IMG} />
+            <Link to="/profile" aria-label="Mon profil" className="rounded-full overflow-hidden shrink-0">
+              <Avatar />
+            </Link>
 
-            <button
+            <Link
+              to="/notifications"
               aria-label="Notifications"
               className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
               style={{
@@ -101,7 +79,7 @@ export function HomePage() {
               }}
             >
               <Bell size={20} color="#1D261B" strokeWidth={1.5} />
-            </button>
+            </Link>
           </div>
         </header>
 

@@ -5,6 +5,8 @@ import { DashboardGridPage } from './features/detail-slot/DashboardGridPage'
 import { SlotDetailPage } from './features/detail-slot/SlotDetailPage'
 import { CalendarPage } from './features/calendar/CalendarPage'
 import { MarketplacePage } from './features/marketplace/MarketplacePage'
+import { ProfilePage, SettingsPage } from './features/profile'
+import { NotificationsPage } from './features/notifications'
 import { Preloader } from './features/preloader/Preloader'
 
 function App() {
@@ -28,6 +30,9 @@ function App() {
         <Route path="/slot/:slotId/box/:boxNumber" element={<SlotDetailPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/marketplace" element={<MarketplacePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         {/* GitHub Pages / direct-link fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

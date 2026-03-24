@@ -120,7 +120,12 @@ function PlantBox({ number, name, style: extraStyle, onClick }) {
   return (
     <div
       className={`relative overflow-hidden rounded-lg flex flex-col items-center justify-center ${onClick ? 'pressable-card cursor-pointer' : ''}`}
-      style={{ background: 'var(--color-eden-elevated)', padding: 8, ...extraStyle }}
+      style={{
+        background: 'var(--color-eden-elevated)',
+        padding: 8,
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        ...extraStyle,
+      }}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -170,7 +175,7 @@ function SolarBox({ style: extraStyle }) {
     >
       {/* Pulsing dot grid — signals active energy harvest */}
       <div
-        className="solar-dots absolute inset-0"
+        className="solar-dots absolute inset-0 rounded-lg"
         style={{
           backgroundImage: 'radial-gradient(circle, rgba(219,255,89,0.35) 1.5px, transparent 1.5px)',
           backgroundSize: '16px 16px',
@@ -194,7 +199,14 @@ function ReservoirBox({ current = 20, total = 60, style: extraStyle }) {
   return (
     <div
       className="relative overflow-hidden rounded-lg flex flex-col items-center justify-between"
-      style={{ background: 'var(--color-eden-elevated)', padding: 8, ...extraStyle }}
+      style={{
+        background: 'var(--color-eden-elevated)',
+        padding: 8,
+        borderWidth: 1,
+        borderStyle: 'solid',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        ...extraStyle,
+      }}
     >
       <div className="flex flex-col items-center justify-center flex-1" style={{ gap: 4 }}>
         <Droplets size={24} color="var(--color-eden-lime)" strokeWidth={1.5} />
@@ -308,6 +320,7 @@ function CardList({ plant, onNavigate }) {
         gap: 24,
         alignItems: 'center',
         background: 'var(--color-eden-elevated)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: 32,
         height: 'fit-content',
         overflow: 'hidden',

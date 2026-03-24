@@ -176,6 +176,9 @@ a {
   }
   .solar-dots {
     animation: solar-pulse 2.4s ease-in-out infinite;
+    border-style: solid;
+    border-width: 1px;
+    border-color: rgba(252, 255, 242, 0.1);
   }
 
   /* Hardware-accelerated reveal helpers (used by GSAP) */
