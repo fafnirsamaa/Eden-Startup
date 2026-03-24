@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { HomePage } from './features/dashboard/HomePage'
 import { DashboardGridPage } from './features/detail-slot/DashboardGridPage'
 import { SlotDetailPage } from './features/detail-slot/SlotDetailPage'
+import { CalendarPage } from './features/calendar/CalendarPage'
+import { MarketplacePage } from './features/marketplace/MarketplacePage'
 import { Preloader } from './features/preloader/Preloader'
 
 function App() {
@@ -24,7 +26,8 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/slot/:id" element={<DashboardGridPage />} />
         <Route path="/slot/:slotId/box/:boxNumber" element={<SlotDetailPage />} />
-        {/* Additional routes will be wired here as features are built */}
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
         {/* GitHub Pages / direct-link fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
