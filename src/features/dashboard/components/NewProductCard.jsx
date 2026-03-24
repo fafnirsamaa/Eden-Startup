@@ -16,12 +16,19 @@ export function NewProductCard({ imageUrl = GARDEN_IMAGE_URL, productSlug }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-lg flex flex-col justify-between p-2 cursor-pointer"
+      className={`relative overflow-hidden rounded-lg flex flex-col justify-between p-2 ${productSlug ? 'pressable-card cursor-pointer' : 'cursor-default'}`}
       style={{ height: 214 }}
       onClick={handleClick}
       role={productSlug ? 'button' : undefined}
       tabIndex={productSlug ? 0 : undefined}
-      onKeyDown={(e) => e.key === 'Enter' && handleClick()}
+      aria-label={productSlug ? 'Découvrir le produit Eden L' : undefined}
+      onKeyDown={(e) => {
+        if (!productSlug) return
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleClick()
+        }
+      }}
     >
       {/* Full-bleed photo */}
       <div className="absolute inset-0 rounded-lg overflow-hidden" aria-hidden="true">

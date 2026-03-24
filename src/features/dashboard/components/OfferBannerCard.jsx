@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import bgNoise from '../../../assets/images/bg_noise.webp'
 
 /**
@@ -5,9 +6,16 @@ import bgNoise from '../../../assets/images/bg_noise.webp'
  */
 
 export function OfferBannerCard({ discountPct = 20 }) {
+  const navigate = useNavigate()
+
   return (
     <div
-      className="relative overflow-hidden rounded-lg flex flex-col justify-between p-2"
+      role="button"
+      tabIndex={0}
+      aria-label="Voir les offres de la boutique"
+      className="pressable-card relative overflow-hidden rounded-lg flex flex-col justify-between p-2 cursor-pointer"
+      onClick={() => navigate('/marketplace')}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), navigate('/marketplace'))}
       style={{
         minHeight: 164,
         height: 117,

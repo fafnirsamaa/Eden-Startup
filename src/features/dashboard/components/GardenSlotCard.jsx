@@ -6,12 +6,19 @@ export function GardenSlotCard({ id, name = 'Eden L', status = 'En ligne', image
 
   return (
     <div
-      className="relative overflow-hidden rounded-lg flex flex-col gap-2 p-2 cursor-pointer"
+      className="pressable-card relative overflow-hidden rounded-lg flex flex-col gap-2 p-2 cursor-pointer"
       style={{ background: 'var(--color-eden-elevated)', height: 230 }}
       onClick={() => id && navigate(`/slot/${id}`)}
       role={id ? 'button' : undefined}
       tabIndex={id ? 0 : undefined}
-      onKeyDown={(e) => e.key === 'Enter' && id && navigate(`/slot/${id}`)}
+      aria-label={id ? `Ouvrir ${name}` : undefined}
+      onKeyDown={(e) => {
+        if (!id) return
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          navigate(`/slot/${id}`)
+        }
+      }}
     >
       {/* Header row */}
       <div className="flex items-center gap-1">
@@ -60,14 +67,19 @@ export function GardenSlotCard({ id, name = 'Eden L', status = 'En ligne', image
 
       {/* Arrow CTA — absolute top-right */}
       <button
+        type="button"
         aria-label={`Voir les détails de ${name}`}
-        className="absolute flex items-center justify-center rounded-full transition-opacity duration-150 hover:opacity-80"
+        className="pressable-icon absolute flex items-center justify-center rounded-full transition-opacity duration-150 hover:opacity-80"
         style={{
           top: 8,
           right: 8,
           width: 42,
           height: 42,
           background: 'var(--color-eden-lime)',
+        }}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (id) navigate(`/slot/${id}`)
         }}
       >
         <ArrowUpRight size={18} color="#1D261B" strokeWidth={2} />

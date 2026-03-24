@@ -119,12 +119,17 @@ function CountBadge({ count = 99 }) {
 function PlantBox({ number, name, style: extraStyle, onClick }) {
   return (
     <div
-      className="relative overflow-hidden rounded-lg cursor-pointer flex flex-col items-center justify-center"
+      className={`relative overflow-hidden rounded-lg flex flex-col items-center justify-center ${onClick ? 'pressable-card cursor-pointer' : ''}`}
       style={{ background: 'var(--color-eden-elevated)', padding: 8, ...extraStyle }}
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick?.()
+        }
+      }}
     >
       <p
         className="font-heading absolute pointer-events-none select-none"
@@ -293,6 +298,10 @@ function CardList({ plant, onNavigate }) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Voir le détail — ${name}`}
+      className="pressable-card"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -312,6 +321,14 @@ function CardList({ plant, onNavigate }) {
         paddingBottom: 46,
         paddingLeft: 8,
         paddingRight: 8,
+        cursor: 'pointer',
+      }}
+      onClick={onNavigate}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onNavigate()
+        }
       }}
     >
       {/* ── Header row ──── */}
@@ -355,25 +372,19 @@ function CardList({ plant, onNavigate }) {
           </p>
         </div>
 
-        <button
-          aria-label={`Voir ${name}`}
-          onClick={onNavigate}
+        <div
+          aria-hidden="true"
           style={{
             width: 42,
             height: 42,
             flexShrink: 0,
-            borderRadius: 9999,
-            border: 'none',
-            cursor: 'pointer',
-            background: 'transparent',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: 0,
           }}
         >
           <img src={IMG_BTN_ROUND} alt="" style={{ width: 42, height: 42, display: 'block' }} />
-        </button>
+        </div>
       </div>
 
       {/* ── Body (image + overlapping badges) ──── */}
