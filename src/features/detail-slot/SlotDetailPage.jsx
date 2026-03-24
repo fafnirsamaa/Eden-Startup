@@ -3,7 +3,7 @@
  * Figma: Dashboard/Detail-Slot (node 136:5001)
  * Route: /slot/:slotId/box/:boxNumber
  */
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Sun, Droplets, Gauge, Thermometer, ArrowLeft, FlaskConical,
@@ -40,43 +40,91 @@ const MOCK = {
 
 const MAX_SUN_HOURS = 8
 
-/* ── SVG sunlight arc ─────────────────────────────────────── */
+/* ── Canvas sunlight arc ──────────────────────────────────── */
 
 // Figma node 164:394 geometry:
-// Arc group positioned at left=16.64, top=71 in card.
-// Track (Subtract): 319.726×160px → semicircle from (16.64,231) to (336.37,231), top at (176.5,71)
-// Arc centre: CX=176.5, CY=231, R=160
+// Arc group at left=16.64, top=71; track width=319.726, height=160.
+// Semicircle: CX=176.5, CY=231, R=160 — dome top at y=71.
 const ARC_CX = 176.5
 const ARC_CY = 231
 const ARC_R  = 160
 
-function sunlightArc(hours, maxHours) {
-  const progress = Math.max(0, Math.min(1, hours / maxHours))
-  // θ=π at progress=0 (left), θ=0 at progress=1 (right)
-  const theta = Math.PI * (1 - progress)
-  const tipX  = ARC_CX + ARC_R * Math.cos(theta)
-  const tipY  = ARC_CY - ARC_R * Math.sin(theta)
+// Canvas arc direction note:
+//   Canvas angles: 0=right, π/2=down, π=left, 3π/2=up (y-axis is flipped vs. math).
+//   Clockwise (anticlockwise=false) from π → 3π/2 → 2π draws the top dome ✓.
+//   Progress end angle = π + π*pct (clockwise sweep from the left end).
+//
+// Tip position uses the same trig identity as the old SVG helper:
+//   tipX = CX + R·cos(π·(1+pct))   ≡  CX + R·cos(π·(1−pct))
+//   tipY = CY + R·sin(π·(1+pct))   ≡  CY − R·sin(π·(1−pct))
+
+function arcTip(pct) {
+  const angle = Math.PI * (1 + pct)         // canvas clockwise angle at progress tip
   return {
-    track: `M ${ARC_CX - ARC_R},${ARC_CY} A ${ARC_R},${ARC_R} 0 0 0 ${ARC_CX + ARC_R},${ARC_CY}`,
-    fill: progress > 0
-      ? `M ${ARC_CX - ARC_R},${ARC_CY} A ${ARC_R},${ARC_R} 0 ${progress > 0.5 ? 1 : 0} 0 ${tipX},${tipY}`
-      : '',
-    tipX,
-    tipY,
+    tipX: ARC_CX + ARC_R * Math.cos(angle),
+    tipY: ARC_CY + ARC_R * Math.sin(angle),
   }
+}
+
+function useArcCanvas(canvasRef, sunHours, cardW, cardH) {
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const dpr = window.devicePixelRatio || 1
+
+    canvas.width        = cardW * dpr
+    canvas.height       = cardH * dpr
+    canvas.style.width  = `${cardW}px`
+    canvas.style.height = `${cardH}px`
+
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.save()
+    ctx.scale(dpr, dpr)
+
+    const pct = Math.max(0, Math.min(1, sunHours / MAX_SUN_HOURS))
+
+    // Track — full dome, clockwise from left (π) to right (2π)
+    ctx.beginPath()
+    ctx.arc(ARC_CX, ARC_CY, ARC_R, Math.PI, Math.PI * 2, false)
+    ctx.strokeStyle = 'rgba(252,255,242,0.13)'
+    ctx.lineWidth   = 12
+    ctx.lineCap     = 'round'
+    ctx.stroke()
+
+    // Progress fill — clockwise from left (π) to tip angle
+    if (pct > 0.005) {
+      ctx.beginPath()
+      ctx.arc(ARC_CX, ARC_CY, ARC_R, Math.PI, Math.PI * (1 + pct), false)
+      ctx.strokeStyle = '#DBFF59'
+      ctx.lineWidth   = 12
+      ctx.lineCap     = 'round'
+      ctx.stroke()
+    }
+
+    ctx.restore()
+  }, [canvasRef, sunHours, cardW, cardH])
+
+  useEffect(() => { draw() }, [draw])
 }
 
 /* ── Page sub-components ──────────────────────────────────── */
 
 /**
  * Sunlight card — Figma 164:394.
- * Arc: semicircle CX=176.5 CY=231 R=160, top dome at y=71. Card h=295.
+ * Arc drawn on a <canvas> element (Canvas 2D API, retina-aware via devicePixelRatio).
+ * Geometry: CX=176.5, CY=231, R=160 — dome top at y=71, card h=295.
  * Plant in 146×146 frosted box at top=123, image 295×197 centred and overflowing.
  */
 function SunlightCard({ sunHours = 2, imageUrl }) {
   const CARD_H = 295
   const CARD_W = 353
-  const { track, fill, tipX, tipY } = sunlightArc(sunHours, MAX_SUN_HOURS)
+  const canvasRef = useRef(null)
+
+  useArcCanvas(canvasRef, sunHours, CARD_W, CARD_H)
+
+  const pct  = Math.max(0, Math.min(1, sunHours / MAX_SUN_HOURS))
+  const { tipX, tipY } = arcTip(pct)
 
   // Sun icon 52×52 centred on arc tip
   const sunL = tipX - 26
@@ -94,30 +142,12 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
         flexShrink: 0,
       }}
     >
-      {/* Arc SVG — track + progress fill */}
-      <svg
-        width={CARD_W}
-        height={CARD_H}
-        style={{ position: 'absolute', inset: 0 }}
+      {/* Arc canvas — track + progress fill */}
+      <canvas
+        ref={canvasRef}
         aria-hidden="true"
-      >
-        <path
-          d={track}
-          fill="none"
-          stroke="rgba(252,255,242,0.13)"
-          strokeWidth={12}
-          strokeLinecap="round"
-        />
-        {fill && (
-          <path
-            d={fill}
-            fill="none"
-            stroke="var(--color-eden-lime)"
-            strokeWidth={12}
-            strokeLinecap="round"
-          />
-        )}
-      </svg>
+        style={{ position: 'absolute', inset: 0, display: 'block' }}
+      />
 
       {/* Sun icon at arc tip */}
       <div
