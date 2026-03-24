@@ -48,6 +48,8 @@ const MAX_SUN_HOURS = 8
 const ARC_CX = 176.5
 const ARC_CY = 231
 const ARC_R  = 160
+const ARC_LEFT_X  = ARC_CX - ARC_R
+const ARC_RIGHT_X = ARC_CX + ARC_R
 
 // Canvas arc direction note:
 //   Canvas angles: 0=right, π/2=down, π=left, 3π/2=up (y-axis is flipped vs. math).
@@ -145,6 +147,21 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
   const sunL = tipX - 26
   const sunT = tipY - 26
 
+  // Scale labels (0–100 %) sit just under the arc diameter so they don’t clash with the sun at the tips
+  const arcLabelTop = ARC_CY + 34
+  const labelStyle = {
+    position: 'absolute',
+    top: arcLabelTop,
+    zIndex: 3,
+    fontFamily: 'var(--font-body)',
+    fontSize: 11,
+    fontWeight: 600,
+    color: 'rgba(252,255,242,0.38)',
+    lineHeight: 1,
+    pointerEvents: 'none',
+    userSelect: 'none',
+  }
+
   return (
     <div
       style={{
@@ -192,8 +209,27 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
         style={{ position: 'absolute', top: sunT, left: sunL, zIndex: 3 }}
         aria-hidden="true"
       >
-        <Sun size={52} color="var(--color-eden-lime)" strokeWidth={1.75} />
+        <Sun
+          size={52}
+          color="var(--color-eden-lime)"
+          strokeWidth={1.75}
+          fill="var(--color-eden-lime)"
+        />
       </div>
+
+      {/* Arc scale — 0 % / 100 % at diameter ends (Figma-style range) */}
+      <span
+        aria-hidden="true"
+        style={{ ...labelStyle, left: ARC_LEFT_X, transform: 'translateX(-50%)' }}
+      >
+        0
+      </span>
+      <span
+        aria-hidden="true"
+        style={{ ...labelStyle, left: ARC_RIGHT_X, transform: 'translateX(-50%)' }}
+      >
+        100
+      </span>
 
       {/* 4 — Plant: ~20% larger footprint than frost; not clipped by frost */}
       <div
