@@ -66,44 +66,54 @@ function arcTip(pct) {
   }
 }
 
-function useArcCanvas(canvasRef, sunHours, cardW, cardH) {
+const FROSTED_SIZE = 146
+/** Lettuce visual ~20% larger than frosted plate (Figma). */
+const LETTUCE_PLATE_SCALE = 1.2
+const LETTUCE_WRAPPER = Math.round(FROSTED_SIZE * LETTUCE_PLATE_SCALE)
+
+function setupCanvas2d(canvas, cardW, cardH) {
+  if (!canvas) return null
+  const dpr = window.devicePixelRatio || 1
+  canvas.width        = cardW * dpr
+  canvas.height       = cardH * dpr
+  canvas.style.width  = `${cardW}px`
+  canvas.style.height = `${cardH}px`
+  const ctx = canvas.getContext('2d')
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.save()
+  ctx.scale(dpr, dpr)
+  return ctx
+}
+
+/** Track + progress on separate layers so stacking matches Figma: track → frost → progress → plant. */
+function useSunlightArcLayers(trackRef, progressRef, sunHours, cardW, cardH) {
   const draw = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const dpr = window.devicePixelRatio || 1
-
-    canvas.width        = cardW * dpr
-    canvas.height       = cardH * dpr
-    canvas.style.width  = `${cardW}px`
-    canvas.style.height = `${cardH}px`
-
-    const ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.save()
-    ctx.scale(dpr, dpr)
-
     const pct = Math.max(0, Math.min(1, sunHours / MAX_SUN_HOURS))
 
-    // Track — full dome, clockwise from left (π) to right (2π)
-    ctx.beginPath()
-    ctx.arc(ARC_CX, ARC_CY, ARC_R, Math.PI, Math.PI * 2, false)
-    ctx.strokeStyle = 'rgba(252,255,242,0.13)'
-    ctx.lineWidth   = 12
-    ctx.lineCap     = 'round'
-    ctx.stroke()
-
-    // Progress fill — clockwise from left (π) to tip angle
-    if (pct > 0.005) {
-      ctx.beginPath()
-      ctx.arc(ARC_CX, ARC_CY, ARC_R, Math.PI, Math.PI * (1 + pct), false)
-      ctx.strokeStyle = '#DBFF59'
-      ctx.lineWidth   = 12
-      ctx.lineCap     = 'round'
-      ctx.stroke()
+    const tctx = setupCanvas2d(trackRef.current, cardW, cardH)
+    if (tctx) {
+      tctx.beginPath()
+      tctx.arc(ARC_CX, ARC_CY, ARC_R, Math.PI, Math.PI * 2, false)
+      tctx.strokeStyle = 'rgba(252,255,242,0.14)'
+      tctx.lineWidth   = 12
+      tctx.lineCap     = 'round'
+      tctx.stroke()
+      tctx.restore()
     }
 
-    ctx.restore()
-  }, [canvasRef, sunHours, cardW, cardH])
+    const pctx = setupCanvas2d(progressRef.current, cardW, cardH)
+    if (pctx) {
+      if (pct > 0.005) {
+        pctx.beginPath()
+        pctx.arc(ARC_CX, ARC_CY, ARC_R, Math.PI, Math.PI * (1 + pct), false)
+        pctx.strokeStyle = '#DBFF59'
+        pctx.lineWidth   = 12
+        pctx.lineCap     = 'round'
+        pctx.stroke()
+      }
+      pctx.restore()
+    }
+  }, [trackRef, progressRef, sunHours, cardW, cardH])
 
   useEffect(() => { draw() }, [draw])
 }
@@ -112,21 +122,26 @@ function useArcCanvas(canvasRef, sunHours, cardW, cardH) {
 
 /**
  * Sunlight card — Figma 164:394.
- * Arc drawn on a <canvas> element (Canvas 2D API, retina-aware via devicePixelRatio).
- * Geometry: CX=176.5, CY=231, R=160 — dome top at y=71, card h=295.
- * Plant in 146×146 frosted box at top=123, image 295×197 centred and overflowing.
+ * Z-order: grey track → frosted plate (empty) → lime progress → sun marker → plant (on top of arc).
+ * Two canvases so the plant can sit above the progress stroke while the frost sits below it.
  */
 function SunlightCard({ sunHours = 2, imageUrl }) {
   const CARD_H = 295
   const CARD_W = 353
-  const canvasRef = useRef(null)
+  const trackCanvasRef = useRef(null)
+  const progressCanvasRef = useRef(null)
 
-  useArcCanvas(canvasRef, sunHours, CARD_W, CARD_H)
+  useSunlightArcLayers(trackCanvasRef, progressCanvasRef, sunHours, CARD_W, CARD_H)
 
   const pct  = Math.max(0, Math.min(1, sunHours / MAX_SUN_HOURS))
   const { tipX, tipY } = arcTip(pct)
+  const currentImage = imageUrl ?? edenLNoBg
+  const isLettuceImage = currentImage === laitueImg || currentImage === LETTUCE_IMG
 
-  // Sun icon 52×52 centred on arc tip
+  const frostedTop = 123
+  const lettuceTop = frostedTop + (FROSTED_SIZE - LETTUCE_WRAPPER) / 2
+
+  // Sun icon 52×52 centred on arc tip — same layer as progress, under the plant
   const sunL = tipX - 26
   const sunT = tipY - 26
 
@@ -142,51 +157,68 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
         flexShrink: 0,
       }}
     >
-      {/* Arc canvas — track + progress fill */}
+      {/* 1 — Track only */}
       <canvas
-        ref={canvasRef}
+        ref={trackCanvasRef}
         aria-hidden="true"
-        style={{ position: 'absolute', inset: 0, display: 'block' }}
+        style={{ position: 'absolute', inset: 0, display: 'block', zIndex: 1, pointerEvents: 'none' }}
       />
 
-      {/* Sun icon at arc tip */}
+      {/* 2 — Frosted plate (no image: avoids clipping; plant is layered above progress) */}
       <div
-        style={{ position: 'absolute', top: sunT, left: sunL, zIndex: 4 }}
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: frostedTop,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: FROSTED_SIZE,
+          height: FROSTED_SIZE,
+          borderRadius: 20,
+          background: 'rgba(255,255,255,0.10)',
+          zIndex: 2,
+        }}
+      />
+
+      {/* 3 — Progress arc only */}
+      <canvas
+        ref={progressCanvasRef}
+        aria-hidden="true"
+        style={{ position: 'absolute', inset: 0, display: 'block', zIndex: 3, pointerEvents: 'none' }}
+      />
+
+      {/* 3 — Sun at arc tip (above progress stroke, below plant) */}
+      <div
+        style={{ position: 'absolute', top: sunT, left: sunL, zIndex: 3 }}
         aria-hidden="true"
       >
-        <Sun size={52} color="var(--color-eden-lime)" strokeWidth={1.5} />
+        <Sun size={52} color="var(--color-eden-lime)" strokeWidth={1.75} />
       </div>
 
-      {/* Frosted 146×146 box at top=123, image 295×197 overflowing centre */}
+      {/* 4 — Plant: ~20% larger footprint than frost; not clipped by frost */}
       <div
         style={{
           position: 'absolute',
-          top: 123,
+          top: lettuceTop,
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 146,
-          height: 146,
-          borderRadius: 20,
-          background: 'rgba(255,255,255,0.10)',
-          overflow: 'visible',
-          zIndex: 3,
+          width: isLettuceImage ? LETTUCE_WRAPPER : FROSTED_SIZE,
+          height: isLettuceImage ? LETTUCE_WRAPPER : FROSTED_SIZE,
+          zIndex: 4,
+          pointerEvents: 'none',
         }}
       >
         <img
-          src={imageUrl ?? edenLNoBg}
+          src={currentImage}
           alt=""
           loading="eager"
           decoding="sync"
           style={{
-            position: 'absolute',
-            width: 295,
-            height: 197,
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            objectFit: 'cover',
+            width: '100%',
+            height: '100%',
+            objectFit: isLettuceImage ? 'contain' : 'cover',
             objectPosition: 'center bottom',
-            pointerEvents: 'none',
+            display: 'block',
           }}
         />
       </div>
@@ -205,7 +237,7 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
       >
         <p
           className="font-heading"
-          style={{ fontSize: 22, fontWeight: 600, color: 'var(--color-eden-light)', margin: 0 }}
+          style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-eden-light)', margin: 0 }}
         >
           Durée d&apos;ensoleillement
         </p>
@@ -214,7 +246,7 @@ function SunlightCard({ sunHours = 2, imageUrl }) {
           style={{
             width: 42, height: 42, flexShrink: 0,
             borderRadius: 9999,
-            background: 'rgba(255,255,255,0.1)',
+            background: 'rgba(255,255,255,0.12)',
             border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
