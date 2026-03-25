@@ -4,19 +4,20 @@
  * Accessible via /slot/:id
  */
 import { useRef, useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
-  UserRound, Droplets, Zap, LayoutGrid, List,
+  Bell,
+  Droplets, Zap, LayoutGrid, List,
   ArrowLeft,
 } from 'lucide-react'
 import { gsap } from '@/lib/gsap'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { Avatar } from '@/components/Avatar'
 import laitueImg from '@/assets/images/laitue.webp'
 import tomatoImg from '@/assets/images/tomato.webp'
 import basilicImg from '@/assets/images/basilic.webp'
 
 /* ── Mock data ────────────────────────────────────────────── */
-const PROFILE_IMG = 'https://www.figma.com/api/mcp/asset/fded8679-9a6b-46b9-afdf-d77a506d6dae'
 
 /* Local vegetable assets (optimized webp). */
 const IMG_LAITUE  = laitueImg
@@ -64,26 +65,6 @@ const MOCK_SLOTS = {
 const tempToPct = (t) => Math.min(100, Math.max(0, Math.round(((t - 15) / 25) * 100)))
 
 /* ── Shared atoms ─────────────────────────────────────────── */
-
-function Avatar({ src }) {
-  const [broken, setBroken] = useState(false)
-  return broken ? (
-    <div
-      className="flex items-center justify-center rounded-full overflow-hidden"
-      style={{ width: 42, height: 42, background: 'var(--color-eden-elevated)' }}
-    >
-      <UserRound size={22} color="var(--color-eden-light)" strokeWidth={1.5} />
-    </div>
-  ) : (
-    <img
-      src={src}
-      alt="Profil"
-      onError={() => setBroken(true)}
-      className="rounded-full object-cover"
-      style={{ width: 42, height: 42 }}
-    />
-  )
-}
 
 /** Orange circle with a small droplet icon — signals a water alert */
 function AlertBadge() {
@@ -536,36 +517,61 @@ export function DashboardGridPage() {
     >
       <div className="mx-auto" style={{ maxWidth: 393 }}>
 
-        {/* ── Slot title + layout switcher ────────────────── */}
-        <div
+        {/* ── Header — même structure que la page détail bac (retour + profil / notif) ── */}
+        <header
           className="will-reveal flex items-center justify-between"
-          style={{ padding: '16px 20px 0' }}
+          style={{ padding: '16px 20px 8px' }}
         >
-          {/* Back button + title column */}
-          <div className="flex items-center" style={{ gap: 12 }}>
-            <button
-              onClick={() => navigate('/')}
-              aria-label="Retour"
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Retour"
+            style={{
+              width: 42,
+              height: 42,
+              flexShrink: 0,
+              borderRadius: 9999,
+              background: 'var(--color-eden-light)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ArrowLeft size={18} color="var(--color-eden-ink)" strokeWidth={2} />
+          </button>
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <Link to="/profile" aria-label="Mon profil" className="rounded-full overflow-hidden shrink-0">
+              <Avatar />
+            </Link>
+            <Link
+              to="/notifications"
+              aria-label="Notifications"
+              className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
               style={{
-                width: 42, height: 42, flexShrink: 0,
-                borderRadius: 9999,
-                background: 'var(--color-eden-light)',
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 42,
+                height: 42,
+                background: 'var(--color-eden-lime)',
+                border: '1px solid rgba(255,255,255,0.1)',
               }}
             >
-              <ArrowLeft size={18} color="var(--color-eden-ink)" strokeWidth={2} />
-            </button>
-
-            <div className="flex flex-col items-start justify-start" style={{ gap: 8 }}>
-              <h1
-                className="font-heading"
-                style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-eden-light)', margin: 0, lineHeight: 1.2 }}
-              >
-                {slot.name}
-              </h1>
-            </div>
+              <Bell size={20} color="#1D261B" strokeWidth={1.5} />
+            </Link>
           </div>
+        </header>
+
+        {/* ── Titre du slot + bascule grille / liste ────────────────── */}
+        <div
+          className="will-reveal flex items-center justify-between"
+          style={{ padding: '8px 20px 0' }}
+        >
+          <h1
+            className="font-heading"
+            style={{ fontSize: 24, fontWeight: 600, color: 'var(--color-eden-light)', margin: 0, lineHeight: 1.2 }}
+          >
+            {slot.name}
+          </h1>
 
           {/* List / Grid toggle — sliding lime pill */}
           <div
